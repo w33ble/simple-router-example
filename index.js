@@ -40,6 +40,8 @@ import createEmitter from './emitter';
     });
   };
 
+  const popstateEmitter = (...args) => emitter.emit('popstate', args);
+
   const router = {
     start(opts) {
       if (routerState.running) return;
@@ -56,25 +58,30 @@ import createEmitter from './emitter';
         } else {
           wrapHistory();
 
-          emitter
-          .on('pushstate', onStateChange)
-          .on('popstate', ([p]) => {
+          emitter.on('pushstate', onStateChange).on('popstate', ([p]) => {
             const loc = `${location.pathname}${location.search}${location.hash}`;
             onStateChange([p.state, '', loc]);
           });
 
-          root.addEventListener('popstate', (...args) => emitter.emit('popstate', args), false);
+          root.addEventListener('popstate', popstateEmitter, false);
         }
       }
 
-      logger.log(routerState, typeof location)
+      logger.log(routerState)
     },
 
     stop() {
       if (!routerState.running) return;
 
+      if (routerState.options.listen) {
+        if (routerState.options.hashType !== false) {
+        } else {
+          root.removeEventListener('popstate', popstateEmitter, false);
+          emitter.off('pushstate').off('popstate');
+        }
+      }
+
       resetHistory();
-      emitter.off('pushstate').off('popstate');
       routerState.running = false;
 
       logger.log(routerState)
