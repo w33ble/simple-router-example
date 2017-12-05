@@ -41,6 +41,7 @@ import createEmitter from './emitter';
   };
 
   const popstateEmitter = (...args) => emitter.emit('popstate', args);
+  const hashchangeEmitter = (...args) => emitter.emit('hashchange', args);
 
   const router = {
     start(opts) {
@@ -52,9 +53,11 @@ import createEmitter from './emitter';
 
       if (routerState.options.listen) {
         if (routerState.options.hashType !== false) {
-          root.addEventListener('hashchange', ev => {
-            logger.log('hashchange', ev)
-          }, false);
+          emitter.on('hashchange', ([p]) => {
+            onStateChange([{}, '', location.hash.replace(routerState.options.hashType, '')]);
+          });
+
+          root.addEventListener('hashchange', hashchangeEmitter, false);
         } else {
           wrapHistory();
 
@@ -75,6 +78,8 @@ import createEmitter from './emitter';
 
       if (routerState.options.listen) {
         if (routerState.options.hashType !== false) {
+          root.removeEventListener('hashchange', hashchangeEmitter, false);
+          emitter.off('hashchange');
         } else {
           root.removeEventListener('popstate', popstateEmitter, false);
           emitter.off('pushstate').off('popstate');
